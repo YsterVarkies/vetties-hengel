@@ -1,0 +1,7 @@
+# Local tool settings (used only for previewing on this computer)
+.claude/
+
+# OS clutter
+Thumbs.db
+desktop.ini
+.DS_Store

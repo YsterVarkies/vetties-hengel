@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en-ZA">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0d0d0d">
+  <title>Vetties Hengel Hoekie | Fishing Tackle Shop in Potchefstroom</title>
+  <meta name="description" content="Fishing tackle shop in Cachet Park, Potchefstroom. Lures, reels, rods, bait and expert advice, with worldwide shipping.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Vetties Hengel Hoekie">
+  <meta property="og:description" content="Built for anglers. Stocked by experts. Fishing tackle in Cachet Park, Potchefstroom.">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,700;0,800;1,700;1,800&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <!-- Three.js for the 3D parts (scene3d.js). The page works without it. -->
+  <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js" crossorigin>
+  <script src="script.js" defer></script>
+  <script src="scene3d.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <!-- HEADER -->
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="wordmark" href="#top" aria-label="Vetties Hengel Hoekie, back to top">
+        <img src="assets/logo.png" alt="Vetties Hengel Hoekie" width="640" height="253">
+      </a>
+      <nav class="main-nav" id="main-nav" aria-label="Main">
+        <a href="#stock">In store</a>
+        <a href="#visit">Visit us</a>
+        <a href="#contact">Contact</a>
+      </nav>
+      <a class="btn btn-green header-cta" id="header-whatsapp" href="#contact">WhatsApp us</a>
+      <!-- Hamburger button: only shown on phones (see style.css) -->
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="main-nav">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <main id="main">
+
+    <!-- HERO -->
+    <section class="hero" id="top" aria-labelledby="hero-title">
+      <!-- Rising bubbles (created by script.js) -->
+      <div class="bubbles" id="bubbles" aria-hidden="true"></div>
+
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <p class="status" id="status" role="status" hidden>
+            <span class="dot" aria-hidden="true"></span>
+            <span id="status-text"></span>
+          </p>
+          <h1 id="hero-title">Built for anglers.<br>Stocked by experts.</h1>
+          <p class="lead" data-bind="intro"></p>
+          <div class="actions">
+            <a class="btn btn-green" id="hero-whatsapp" href="#contact">WhatsApp us</a>
+            <a class="btn btn-ghost" id="hero-map" href="#visit" target="_blank" rel="noopener">Get directions</a>
+          </div>
+        </div>
+
+        <!-- The bass from the logo. It bobs, follows the pointer, rises as you scroll
+             and leaps when clicked. Decorative only. -->
+        <div class="hero-art" aria-hidden="true">
+          <span class="rings"><i></i><i></i><i></i></span>
+          <div class="fish-wrap" id="fish-wrap">
+            <div class="fish-bob">
+              <img class="fish" id="fish" src="assets/fish.webp" alt="" width="510" height="590">
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- GREEN BAND: the shop's promises from their flyer -->
+    <section class="promises" aria-labelledby="promises-title">
+      <div class="wrap">
+        <h2 class="visually-hidden" id="promises-title">Why shop with us</h2>
+        <ul class="promise-list" id="promise-list"></ul>
+      </div>
+    </section>
+
+    <!-- WHAT'S IN STORE -->
+    <section class="section" id="stock" aria-labelledby="stock-title">
+      <div class="wrap">
+        <h2 id="stock-title">What's on the shelves</h2>
+        <p class="section-intro">A look at what's in store. Message us to check stock before you drive in.</p>
+        <ul class="stock-list" id="stock-list"></ul>
+
+        <!-- Photos only show once some are added to CONFIG.photos in script.js -->
+        <div class="photos-block" id="photos-block" hidden>
+          <h3 class="photos-title">Inside the shop</h3>
+          <div class="photos" id="photos"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VISIT -->
+    <section class="section section-dark" id="visit" aria-labelledby="visit-title">
+      <!-- Moving water. Tap or hover the bobber for a bite. Decorative only. -->
+      <div class="shore" aria-hidden="true">
+        <svg class="bobber" viewBox="0 0 26 62">
+          <path d="M13 1V9" stroke="#f2f2ef" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M1.5 26a11.5 11.5 0 0 1 23 0Z" fill="#e0533d"/>
+          <path d="M1.5 26a11.5 11.5 0 0 0 23 0Z" fill="#f2f2ef"/>
+          <path d="M13 37.5V50" stroke="#f2f2ef" stroke-opacity=".35" stroke-width="1.5"/>
+        </svg>
+        <div class="waves"><i class="wave wave-back"></i><i class="wave wave-front"></i></div>
+      </div>
+      <div class="wrap visit-grid">
+        <div>
+          <h2 id="visit-title">Visit the shop</h2>
+          <address id="address"></address>
+          <a class="btn btn-green" id="visit-map" href="#" target="_blank" rel="noopener">Open in Google Maps</a>
+          <p class="local-tip">Heading to Boskop Dam or the Mooi River? Stop in for advice before you go.</p>
+        </div>
+        <div>
+          <h3 class="hours-title">Opening hours</h3>
+          <table class="hours">
+            <caption class="visually-hidden">Opening hours</caption>
+            <tbody id="hours-body"></tbody>
+          </table>
+          <p class="hours-note" id="hours-note"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section class="section" id="contact" aria-labelledby="contact-title">
+      <div class="wrap contact-grid">
+        <div>
+          <h2 id="contact-title">Talk to us</h2>
+          <p class="section-intro">Contact us on WhatsApp, by phone or by email during business hours.</p>
+          <ul class="people" id="people"></ul>
+          <p class="email-line">Email: <a id="email-link" href="#"></a></p>
+        </div>
+
+        <form class="stock-form" id="stock-form" novalidate>
+          <h3>Ask about stock</h3>
+          <p class="form-sub">Tell us what you're after and we'll let you know if we have it.</p>
+
+          <div class="field">
+            <label for="f-name">Your name</label>
+            <input id="f-name" name="name" type="text" autocomplete="name" maxlength="80" required>
+          </div>
+
+          <div class="field">
+            <label for="f-item">What are you looking for?</label>
+            <textarea id="f-item" name="item" maxlength="1500" required></textarea>
+          </div>
+
+          <div class="field">
+            <label for="f-delivery">Collect or ship?</label>
+            <select id="f-delivery" name="delivery">
+              <option value="collect">I'll collect in store</option>
+              <option value="ship">Please ship it to me</option>
+            </select>
+          </div>
+
+          <div class="field" id="where-field" hidden>
+            <label for="f-where">Where should we ship it?</label>
+            <input id="f-where" name="where" type="text" placeholder="Town and country" maxlength="150">
+          </div>
+
+          <button class="btn btn-green" type="submit">Send on WhatsApp</button>
+          <p class="form-help">This opens WhatsApp with your message ready. Press Send there to finish.</p>
+          <p class="form-status" id="form-status" role="status" aria-live="polite" hidden></p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="shore" aria-hidden="true">
+      <div class="waves"><i class="wave wave-back"></i><i class="wave wave-front"></i></div>
+    </div>
+    <div class="wrap footer-inner">
+      <img class="footer-logo" src="assets/logo.png" alt="Vetties Hengel Hoekie" width="640" height="253">
+      <span id="footer-address"></span>
+      <span id="footer-copy"></span>
+    </div>
+  </footer>
+
+  <!-- A fishing line that gets longer as you scroll. Click the hook to reel back to the top. -->
+  <div class="cast" id="cast">
+    <div class="cast-line" id="cast-line"></div>
+    <button class="cast-hook" id="cast-hook" type="button" aria-label="Back to top">
+      <svg viewBox="0 0 20 34" aria-hidden="true">
+        <circle cx="14" cy="5" r="2.6"/>
+        <path d="M14 8V22a6.5 6.5 0 0 1-13 0v-4l3.5 4"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Shown only if JavaScript is switched off -->
+  <noscript>
+    <div class="noscript">
+      <p><strong>Vetties Hengel Hoekie</strong>, Premises 14, Cachet Park, Cnr Meyer &amp; Steve Biko Street, Potchefstroom.</p>
+      <p>Mon–Fri 08:00–17:00, Sat and public holidays 08:00–15:00, Sun 09:00–13:00.</p>
+      <p>Benjamin: 083 797 9240. Email: vettieshengelhoekie@gmail.com</p>
+    </div>
+  </noscript>
+</body>
+</html>
