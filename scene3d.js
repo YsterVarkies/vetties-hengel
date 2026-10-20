@@ -94,10 +94,11 @@
     // Reading the picture's pixels only works from a web server, not from a file
     // opened straight off the disk. If it fails, the flat hero stays.
     const img = await loadImage(flatFish.src);
+    const picture = solidPicture(img, Math.round(img.naturalWidth * 0.012));
     const GW = 150;
-    const GH = Math.round(GW * img.naturalHeight / img.naturalWidth);
-    const alpha = readAlpha(img, GW, GH);
-    const FISH_W = FISH_H * img.naturalWidth / img.naturalHeight;
+    const GH = Math.round(GW * picture.height / picture.width);
+    const alpha = readAlpha(picture, GW, GH);
+    const FISH_W = FISH_H * picture.width / picture.height;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, FINE_POINTER ? 2 : 1.5));
@@ -122,7 +123,7 @@
     lights.forEach((light) => { light.layers.enable(1); scene.add(light); });
 
     /* ---- The bass: the logo picture, puffed out into a rounded 3D shape ---- */
-    const texture = new THREE.Texture(img);
+    const texture = new THREE.CanvasTexture(picture);
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
     texture.needsUpdate = true;
@@ -511,24 +512,9 @@
   // flat and the body gets rounded, like an inflated sticker. Front and back.
   function inflatedGeometry(THREE, alpha, gw, gh, width, height, depth) {
     const N = gw * gh;
-    const SQ2 = Math.SQRT2;
 
     // Distance from each painted pixel to the outline
-    const dist = new Float32Array(N);
-    for (let i = 0; i < N; i++) dist[i] = alpha[i] > 0.5 ? 1e6 : 0;
-    const at = (x, y) => (x < 0 || y < 0 || x >= gw || y >= gh ? 0 : dist[y * gw + x]);
-    for (let y = 0; y < gh; y++) {
-      for (let x = 0; x < gw; x++) {
-        const i = y * gw + x;
-        if (dist[i]) dist[i] = Math.min(dist[i], at(x - 1, y) + 1, at(x, y - 1) + 1, at(x - 1, y - 1) + SQ2, at(x + 1, y - 1) + SQ2);
-      }
-    }
-    for (let y = gh - 1; y >= 0; y--) {
-      for (let x = gw - 1; x >= 0; x--) {
-        const i = y * gw + x;
-        if (dist[i]) dist[i] = Math.min(dist[i], at(x + 1, y) + 1, at(x, y + 1) + 1, at(x + 1, y + 1) + SQ2, at(x - 1, y + 1) + SQ2);
-      }
-    }
+    const dist = chamfer(alpha.map((a) => (a > 0.5 ? 1 : 0)), gw, gh, true);
 
     // Turn distance into thickness, then smooth it
     const reach = gw * 0.13;
@@ -632,6 +618,120 @@
     const alpha = new Float32Array(w * h);
     for (let i = 0; i < w * h; i++) alpha[i] = data[i * 4 + 3] / 255;
     return alpha;
+  }
+
+  // The fins in the picture are spines with see-through gaps between them. In 3D
+  // those gaps show as holes, and the side fin (painted over the body) makes the
+  // body dip in. This copy closes gaps up to "gap" pixels wide, fills any holes
+  // inside the outline, and colours the new pixels from their neighbours.
+  // Throws if the browser won't let us read the picture (file:// pages).
+  function solidPicture(img, gap) {
+    const w = img.naturalWidth;
+    const h = img.naturalHeight;
+    const N = w * h;
+    const c = document.createElement('canvas');
+    c.width = w;
+    c.height = h;
+    const ctx = c.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(img, 0, 0);
+    const image = ctx.getImageData(0, 0, w, h);
+    const px = image.data;
+
+    // Close the gaps: grow the painted area by "gap", then shrink it back
+    const clear = new Uint8Array(N);
+    for (let i = 0; i < N; i++) clear[i] = px[i * 4 + 3] < 128 ? 1 : 0;
+    const toPaint = chamfer(clear, w, h, false);
+    const grown = new Uint8Array(N);
+    for (let i = 0; i < N; i++) grown[i] = toPaint[i] <= gap ? 1 : 0;
+    const toEdge = chamfer(grown, w, h, true);
+    const solid = new Uint8Array(N);
+    for (let i = 0; i < N; i++) solid[i] = toEdge[i] > gap || !clear[i] ? 1 : 0;
+
+    // Anything clear that can't be reached from the picture's border is a hole
+    const outside = new Uint8Array(N);
+    const stack = [];
+    for (let x = 0; x < w; x++) stack.push(x, (h - 1) * w + x);
+    for (let y = 0; y < h; y++) stack.push(y * w, y * w + w - 1);
+    while (stack.length) {
+      const i = stack.pop();
+      if (outside[i] || solid[i]) continue;
+      outside[i] = 1;
+      const x = i % w;
+      if (x > 0) stack.push(i - 1);
+      if (x < w - 1) stack.push(i + 1);
+      if (i >= w) stack.push(i - w);
+      if (i < N - w) stack.push(i + w);
+    }
+
+    // Colour for the new pixels: a blur of the colours around them, a little lighter
+    const channels = [0, 1, 2, 3].map(() => new Float32Array(N));
+    for (let i = 0; i < N; i++) {
+      const a = px[i * 4 + 3] / 255;
+      channels[3][i] = a;
+      for (let k = 0; k < 3; k++) channels[k][i] = px[i * 4 + k] * a;
+    }
+    const soft = channels.map((ch) => blurChannel(blurChannel(ch, w, h, 4), w, h, 4));
+    const membrane = [150, 190, 90];
+    for (let i = 0; i < N; i++) {
+      const a = px[i * 4 + 3] / 255;
+      if (outside[i] || a >= 1) continue;
+      const weight = Math.max(soft[3][i], 0.001);
+      for (let k = 0; k < 3; k++) {
+        const fill = (soft[k][i] / weight) * 0.75 + membrane[k] * 0.25;
+        px[i * 4 + k] = px[i * 4 + k] * a + fill * (1 - a);
+      }
+      px[i * 4 + 3] = 255;
+    }
+    ctx.putImageData(image, 0, 0);
+    return c;
+  }
+
+  // Distance from each "inside" pixel to the nearest outside one (0 for outside
+  // pixels). edgeIsOutside: whether the area beyond the picture counts as outside.
+  function chamfer(inside, w, h, edgeIsOutside) {
+    const SQ2 = Math.SQRT2;
+    const d = new Float32Array(w * h);
+    for (let i = 0; i < w * h; i++) d[i] = inside[i] ? 1e9 : 0;
+    const edge = edgeIsOutside ? 0 : 1e9;
+    const at = (x, y) => (x < 0 || y < 0 || x >= w || y >= h ? edge : d[y * w + x]);
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = y * w + x;
+        if (d[i]) d[i] = Math.min(d[i], at(x - 1, y) + 1, at(x, y - 1) + 1, at(x - 1, y - 1) + SQ2, at(x + 1, y - 1) + SQ2);
+      }
+    }
+    for (let y = h - 1; y >= 0; y--) {
+      for (let x = w - 1; x >= 0; x--) {
+        const i = y * w + x;
+        if (d[i]) d[i] = Math.min(d[i], at(x + 1, y) + 1, at(x, y + 1) + 1, at(x + 1, y + 1) + SQ2, at(x - 1, y + 1) + SQ2);
+      }
+    }
+    return d;
+  }
+
+  // Box blur of one channel, across then down
+  function blurChannel(ch, w, h, r) {
+    const across = new Float32Array(w * h);
+    const out = new Float32Array(w * h);
+    const size = 2 * r + 1;
+    for (let y = 0; y < h; y++) {
+      const row = y * w;
+      let sum = 0;
+      for (let x = -r; x <= r; x++) sum += ch[row + Math.min(Math.max(x, 0), w - 1)];
+      for (let x = 0; x < w; x++) {
+        across[row + x] = sum / size;
+        sum += ch[row + Math.min(x + r + 1, w - 1)] - ch[row + Math.max(x - r, 0)];
+      }
+    }
+    for (let x = 0; x < w; x++) {
+      let sum = 0;
+      for (let y = -r; y <= r; y++) sum += across[Math.min(Math.max(y, 0), h - 1) * w + x];
+      for (let y = 0; y < h; y++) {
+        out[y * w + x] = sum / size;
+        sum += across[Math.min(y + r + 1, h - 1) * w + x] - across[Math.max(y - r, 0) * w + x];
+      }
+    }
+    return out;
   }
 
   function easeOutBack(p) {
