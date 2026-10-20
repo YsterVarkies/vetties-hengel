@@ -155,10 +155,111 @@ a { color: inherit; }
 .stock-list h3 { font: 700 1.6rem/1.1 var(--display); margin: 0 0 6px; }
 .stock-list p { margin: 0; color: var(--muted); }
 
-.photos-block { margin-top: 64px; }
-.photos-title { font: 700 1.6rem/1.1 var(--display); margin: 0 0 16px; }
-.photos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-.photos img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 6px; }
+/* Inside the shop (gallery). The big photo sits in the middle and the next and
+   previous ones peek out beside it, tilted. script.js sets each photo's size and
+   its --x / --turn / --scale; changing them animates the photos into place. */
+.section-gallery { background: var(--black); overflow: hidden; }
+.gallery { position: relative; margin-top: 8px; }
+.gallery-stage {
+  position: relative; height: 520px;
+  touch-action: pan-y; user-select: none; -webkit-user-select: none;
+}
+.gallery-slide {
+  position: absolute; left: 50%; top: 50%; margin: 0;
+  border-radius: 8px; overflow: hidden; background: var(--panel);
+  box-shadow: 0 30px 60px -28px rgba(0, 0, 0, .95);
+  transform: translate(-50%, -50%) translateX(var(--x, 0px)) rotate(var(--turn, 0deg)) scale(var(--scale, 1));
+  transition: transform .7s cubic-bezier(.2, .8, .2, 1), opacity .5s ease, filter .5s ease;
+}
+.gallery-slide img { display: block; width: 100%; height: 100%; object-fit: cover; -webkit-user-drag: none; }
+.gallery-slide.is-current { z-index: 3; }
+.gallery-slide.is-near { z-index: 2; cursor: pointer; filter: brightness(.45) saturate(.8); }
+/* A peeking photo lights up when it, or the arrow on top of it, is hovered */
+.gallery-slide.is-near:hover,
+.gallery-stage:has(#gallery-next:hover) .gallery-slide.is-next,
+.gallery-stage:has(#gallery-prev:hover) .gallery-slide.is-prev { filter: brightness(.7) saturate(.9); }
+.gallery-slide.is-far { z-index: 1; opacity: 0; pointer-events: none; }
+
+.gallery-arrow {
+  position: absolute; left: 50%; top: 50%; z-index: 4;
+  display: grid; place-items: center; width: 52px; height: 52px; padding: 0;
+  border: 0; border-radius: 50%; background: var(--green); color: #0a0a0a; cursor: pointer;
+  box-shadow: 0 10px 24px -10px rgba(0, 0, 0, .9);
+  /* Placed with "translate" rather than "transform": a transform would get
+     scaled by the hover effect below and push the button out from under the mouse */
+  translate: calc(var(--x, 0px) - 50%) -50%;
+  transition: scale .2s ease, background .2s;
+}
+.gallery-arrow[hidden] { display: none; }
+.gallery-arrow:hover { background: var(--green-hover); scale: 1.08; }
+.gallery-arrow svg {
+  width: 24px; height: 24px;
+  fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round;
+}
+.gallery-stage.is-still .gallery-slide, .gallery-stage.is-still .gallery-arrow { transition: none; }
+
+.gallery-info {
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 4px 14px;
+  margin: 30px 0 0; text-align: center;
+}
+.gallery-count { font: 700 1.15rem/1 var(--display); letter-spacing: .04em; color: var(--green); }
+.gallery-caption { color: var(--muted); }
+
+/* What anglers say (reviews) */
+.section-reviews { border-top: 1px solid var(--line); }
+.reviews-head {
+  display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between;
+  gap: 24px 40px; margin-bottom: 44px;
+}
+.reviews-head .section-intro { margin-bottom: 0; }
+
+.rating-summary {
+  display: grid; grid-template-columns: auto auto; align-items: center; gap: 4px 16px;
+  color: var(--text); text-decoration: none;
+}
+.rating-number { grid-row: span 2; font: italic 800 4rem/.9 var(--display); }
+.rating-link { color: var(--green); font-weight: 600; font-size: .95rem; }
+.rating-summary:hover .rating-link { text-decoration: underline; }
+
+.stars { display: inline-flex; gap: 3px; }
+.star { display: block; width: 20px; height: 20px; color: var(--green); }
+.star svg { display: block; width: 100%; height: 100%; fill: currentColor; }
+.star.is-empty { color: #3a3a3a; }
+.rating-summary .star { width: 26px; height: 26px; }
+.stars-small .star { width: 14px; height: 14px; }
+
+/* Each review is styled like the shelf labels: a line on top with a green bar */
+.review-list {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px 32px;
+  list-style: none; margin: 0; padding: 0;
+}
+.review { position: relative; border-top: 3px solid var(--line); padding-top: 22px; }
+.review::before {
+  content: ''; position: absolute; top: -3px; left: 0; width: 38px; height: 3px;
+  background: var(--green); transition: width .45s ease;
+}
+.review:hover::before { width: 100%; }
+.review figure { display: flex; flex-direction: column; height: 100%; margin: 0; }
+.review blockquote { margin: 14px 0 0; font-size: 1.12rem; line-height: 1.55; }
+.review blockquote p { margin: 0; }
+.review blockquote p::before { content: '\201C'; }
+.review blockquote p::after { content: '\201D'; }
+.review-note { margin: 8px 0 0; color: var(--muted); font-size: .85rem; font-style: italic; }
+.review figcaption { display: flex; align-items: center; gap: 12px; margin-top: auto; padding-top: 20px; }
+
+.avatar {
+  display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 50%;
+  color: #fff; font: 700 1.1rem/1 var(--body);
+}
+.review-name { display: block; font: 700 1.25rem/1.1 var(--display); }
+.review-source { display: block; color: var(--muted); font-size: .85rem; }
+
+.also-rated { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--line); }
+.also-title { font: 700 1.3rem/1.1 var(--display); margin: 0 0 16px; color: var(--muted); }
+.rated-list { display: flex; flex-wrap: wrap; gap: 14px 32px; list-style: none; margin: 0; padding: 0; }
+.rated-list li { display: flex; align-items: center; gap: 10px; }
+.rated-list .avatar { width: 34px; height: 34px; font-size: .95rem; }
+.rated-list .review-name { font-size: 1.1rem; }
 
 /* Visit */
 .visit-grid {
@@ -423,6 +524,14 @@ address { font-style: normal; font-size: 1.3rem; line-height: 1.5; margin: 6px 0
 .stock-list li.is-seen .a-drop { animation: drip 1.2s ease-in var(--delay, 0s) 2; }
 .stock-list li:hover .a-drop   { animation: drip 1.2s ease-in var(--delay, 0s) infinite; }
 
+/* Review stars pop in one by one as they scroll into view (script.js adds the classes) */
+.reviews-anim .review:not(.is-seen) .star,
+.reviews-anim .rating-summary:not(.is-seen) .star { transform: scale(0); }
+.review.is-seen .star, .rating-summary.is-seen .star {
+  animation: star-pop .5s cubic-bezier(.3, 1.6, .5, 1) calc(var(--seen-delay, 0s) + var(--i) * .08s) backwards;
+}
+@keyframes star-pop { from { transform: scale(0) rotate(-40deg); } to { transform: none; } }
+
 @keyframes wag   { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(16deg); } 75% { transform: rotate(-16deg); } }
 @keyframes spin  { to { transform: rotate(360deg); } }
 @keyframes bend  { 0%, 100% { transform: rotate(0); } 40% { transform: rotate(-8deg); } 70% { transform: rotate(3deg); } }
@@ -466,7 +575,7 @@ address { font-style: normal; font-size: 1.3rem; line-height: 1.5; margin: 6px 0
 
 /* ---------- Tablet ---------- */
 @media (max-width: 900px) {
-  .promise-list, .stock-list { grid-template-columns: 1fr 1fr; }
+  .promise-list, .stock-list, .review-list { grid-template-columns: 1fr 1fr; }
   .visit-grid, .contact-grid { grid-template-columns: 1fr; }
   .hero-grid { grid-template-columns: 1fr; }
   .hero h1 { font-size: clamp(3.1rem, 12vw, 5.6rem); }
@@ -496,9 +605,9 @@ address { font-style: normal; font-size: 1.3rem; line-height: 1.5; margin: 6px 0
     border-bottom: 1px solid var(--line);
   }
   .main-nav a:last-child { border-bottom: 0; }
-  .stock-list, .promise-list { grid-template-columns: 1fr; }
+  .stock-list, .promise-list, .review-list { grid-template-columns: 1fr; }
   .people li { flex-direction: column; align-items: flex-start; }
-  .photos { grid-template-columns: 1fr 1fr; }
+  .gallery-arrow { width: 44px; height: 44px; }
   .actions .btn { flex: 1 1 100%; }
   .bobber { left: 66%; }
   .bobber3d { left: calc(66% - 24px); }

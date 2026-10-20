@@ -7,11 +7,13 @@ Opening index.html straight from the disk also works, but browsers won't let
 the 3D hero read the fish picture from a local file, so the hero shows the
 flat version there. No build tools, keys or backend needed.
 To go live, upload index.html, style.css, script.js, scene3d.js and the assets
-folder (keeping the folder structure) to any static host.
+and Gallery folders (keeping the folder structure) to any static host.
 
 WHERE TO CHANGE THINGS
 ----------------------
-Shop details, hours, people, stock categories, photos:  script.js (CONFIG at the top)
+Shop details, hours, people, stock categories:         script.js (CONFIG at the top)
+Gallery photos ("Inside the shop"):                     Gallery folder, listed in CONFIG.photos
+Google reviews ("What anglers say"):                    script.js (CONFIG.reviews and googleRating)
 Colours and fonts:                                      style.css (:root at the top)
 Page structure and wording of headings:                 index.html
 Tab icon:                                               assets/favicon.svg
@@ -24,9 +26,10 @@ CHECK WITH THE OWNERS BEFORE PUBLISHING
    Leon on the other; Benjamin on both). Confirm who should be listed.
 2. Which number the WhatsApp buttons and stock form go to (mainWhatsapp).
 3. The stock categories and the short descriptions under each.
-4. Get their logo file and a few good photos of the shop. Put photos in
-   assets/ and list them in CONFIG.photos; the gallery appears by itself.
+4. Get their logo file. (The shop photos are in the Gallery folder.)
 5. Ask whether they want a "Website by ..." credit in the footer.
+6. That they're happy for the Google reviews to be quoted on the site, and
+   whether the Ruan Jacobs who left a 5-star rating works at the shop.
 
 THE "OPEN NOW" BADGE
 --------------------
@@ -34,6 +37,34 @@ Worked out in South African time from CONFIG.hours. Public holidays use
 holidayHours, based on the dates in CONFIG.publicHolidays. Update that
 list every year from the official list on gov.za, or the badge will be
 wrong on public holidays.
+
+THE GALLERY ("INSIDE THE SHOP")
+------------------------------
+One big photo, with the next one peeking out on the right, tilted. Click the
+arrow or the peeking photo (or swipe on a phone, or use the arrow keys) to move
+on; once you have, the previous photo peeks out on the left too. It goes round
+in a loop: after the last photo comes the first again (and going back from the
+first photo goes to the last).
+To add a photo: put the file in the Gallery folder, then add a line to
+CONFIG.photos in script.js with its file name (src), a short caption, and an
+alt description for people who can't see it. The list's order is the order
+on the site. Photos keep their own shape (tall, wide or square). Resize big
+phone photos to about 1600px wide first, or the page gets slow to load.
+Only the photo showing and the two either side of it are loaded at a time.
+To hide the section, empty the list: photos: []
+
+THE REVIEWS ("WHAT ANGLERS SAY")
+--------------------------------
+Copied by hand from the shop's Google listing (Google Maps > Reviews), so they
+don't update by themselves. When new reviews come in:
+- Add them to CONFIG.reviews: name, stars, and text if the review has words.
+  Reviews without text are listed by name under "Also rated".
+- Update googleRating (the stars and number of reviews Google shows).
+Names are written as first name and surname initial. Reviews show initials in
+coloured circles rather than people's Google photos: Google's terms don't allow
+copying those onto another site. The "reviews on Google" link goes to mapUrl.
+Ruan Jacobs's rating is left out on purpose, in case he's the Ruan who works
+at the shop. To hide the section, empty the list: reviews: []
 
 THE STOCK FORM
 --------------
@@ -93,7 +124,9 @@ TUNING OR TURNING THINGS OFF
 
 FILES TO UPLOAD
 ---------------
-index.html, style.css, script.js, scene3d.js, and the whole assets folder
-(favicon.svg, logo.png, fish.webp). The fish will be missing if fish.webp is
-not inside assets/. preview.bat, preview.ps1 and the .claude folder are only
+index.html, style.css, script.js, scene3d.js, the whole assets folder
+(favicon.svg, logo.png, fish.webp) and the whole Gallery folder. The fish will
+be missing if fish.webp is not inside assets/. Most web hosts care about
+capital letters, so keep the folder named "Gallery" exactly as it is in
+CONFIG.photos. preview.bat, preview.ps1 and the .claude folder are only
 for previewing on this computer; don't upload them.

@@ -30,6 +30,8 @@
       </a>
       <nav class="main-nav" id="main-nav" aria-label="Main">
         <a href="#stock">In store</a>
+        <a href="#gallery" id="nav-gallery">Gallery</a>
+        <a href="#reviews" id="nav-reviews">Reviews</a>
         <a href="#visit">Visit us</a>
         <a href="#contact">Contact</a>
       </nav>
@@ -89,11 +91,49 @@
         <h2 id="stock-title">What's on the shelves</h2>
         <p class="section-intro">A look at what's in store. Message us to check stock before you drive in.</p>
         <ul class="stock-list" id="stock-list"></ul>
+      </div>
+    </section>
 
-        <!-- Photos only show once some are added to CONFIG.photos in script.js -->
-        <div class="photos-block" id="photos-block" hidden>
-          <h3 class="photos-title">Inside the shop</h3>
-          <div class="photos" id="photos"></div>
+    <!-- INSIDE THE SHOP: photo gallery. The photos are in the Gallery folder and
+         listed in CONFIG.photos in script.js. Hidden until there are some. -->
+    <section class="section section-gallery" id="gallery" aria-labelledby="gallery-title" hidden>
+      <div class="wrap">
+        <h2 id="gallery-title">Inside the shop</h2>
+        <p class="section-intro">Have a look around before you come in.</p>
+        <div class="gallery" id="gallery-box" role="region" aria-roledescription="carousel" aria-label="Photos of the shop">
+          <!-- The big photo sits in the middle; the next one peeks out on the right
+               and the previous one on the left. script.js adds the photos. -->
+          <div class="gallery-stage" id="gallery-stage">
+            <button class="gallery-arrow" id="gallery-prev" type="button" aria-label="Previous photo" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+            </button>
+            <button class="gallery-arrow" id="gallery-next" type="button" aria-label="Next photo">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+            </button>
+          </div>
+          <p class="gallery-info">
+            <span class="gallery-count" id="gallery-count" aria-hidden="true"></span>
+            <span class="gallery-caption" id="gallery-caption"></span>
+          </p>
+          <p class="visually-hidden" id="gallery-live" aria-live="polite"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- WHAT ANGLERS SAY: Google reviews, filled in from CONFIG.reviews in script.js -->
+    <section class="section section-reviews" id="reviews" aria-labelledby="reviews-title" hidden>
+      <div class="wrap">
+        <div class="reviews-head">
+          <div>
+            <h2 id="reviews-title">What anglers say</h2>
+            <p class="section-intro">Reviews from our customers on Google.</p>
+          </div>
+          <a class="rating-summary" id="rating-summary"></a>
+        </div>
+        <ul class="review-list" id="review-list"></ul>
+        <div class="also-rated" id="also-rated" hidden>
+          <h3 class="also-title">Also rated</h3>
+          <ul class="rated-list" id="rated-list"></ul>
         </div>
       </div>
     </section>

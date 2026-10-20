@@ -66,9 +66,38 @@ const CONFIG = {
     { icon: 'box', title: 'Bags, tools & accessories', text: 'Tackle boxes, pliers, nets and the extras that make a fishing day easier.' }
   ],
 
-  // Shop photos. The gallery stays hidden until you add some, for example:
-  // { src: 'assets/shop-1.jpg', alt: 'Wall of soft plastic lures in the shop' }
-  photos: []
+  // "Inside the shop" photos, in the order they appear. Put the files in the Gallery
+  // folder and add a line for each. "alt" describes the photo for people who can't
+  // see it; "caption" shows under it. Photos about 1600px wide load quickest.
+  // The section hides itself if this list is empty.
+  photos: [
+    { src: 'Gallery/492673090_122196112658259867_6372040329984194540_n.jpg', caption: 'Carp reels and spare spools on the counter', alt: 'Two black Kaida carp reels with yellow line and spare spools on the wooden counter, with rods, reels and tackle in the shop behind' },
+    { src: 'Gallery/476186567_122178850592259867_4507522564021933693_n.jpg', caption: 'The terminal tackle wall', alt: 'A pegboard wall packed with green Monster Carp packs of hooks, rigs, leads, swivels and pop-ups' },
+    { src: 'Gallery/484919116_122188657154259867_6208793865318289799_n.jpg', caption: 'Crankbaits, spinnerbaits and line', alt: 'Lure wall with Salmo Hornet crankbaits, Strike King spinnerbaits, Contra fluorocarbon line and LIVETARGET spinner rigs' },
+    { src: 'Gallery/506589893_122204838884259867_6448996942374147574_n.jpg', caption: 'Rods and reels, ready to go', alt: 'A rack of rods with blue-spooled reels, with the shop counter and sunglasses stand behind' },
+    { src: 'Gallery/508694655_122206088558259867_2831108889442379044_n.jpg', caption: 'SRA dips, flavours and pop-ups', alt: 'Wooden shelves of SRA dips, flavours, sprays and pop-ups under an SRA "Sold here" sign' },
+    { src: 'Gallery/480255815_122180180930259867_7609633530443458080_n.jpg', caption: 'Zortex soft plastics', alt: 'Packets of Zortex StealthStick and PowerCraw soft plastics in watermelon and junebug colours' },
+    { src: 'Gallery/509622502_122206088954259867_7140408891389425078_n.jpg', caption: 'Baitcasters on the counter', alt: 'Baitcaster reels, including a Sensation Oryx and Okuma reels, on display stands along the counter' },
+    { src: 'Gallery/473236432_122174873906259867_6720186470031749591_n.jpg', caption: 'Streamline groundfeed by the stack', alt: 'Stacks of 1.5 kg Streamline Baits groundfeed bags on the shop floor, with green bags behind' },
+    { src: 'Gallery/473039497_122174874146259867_2030116333604871152_n.jpg', caption: 'Ready-made rigs', alt: 'Monster Carp ready-made rigs and hook packs hanging on a pegboard' },
+    { src: 'Gallery/509268827_122206088378259867_8951571687858508022_n.jpg', caption: 'Dips in every flavour', alt: 'A row of SRA dip jars in anise, banana, garlic and other flavours on a wooden shelf' },
+    { src: 'Gallery/473316677_122174874152259867_3347409678200515441_n.jpg', caption: 'Hooks, swivels and rig bits', alt: 'Close-up of Monster Carp hooks, swivels and rig accessories on pegs' },
+    { src: 'Gallery/476345189_122178850766259867_2539025455054619140_n.jpg', caption: '1.5 kg groundfeed bags', alt: 'Close-up of Streamline Baits 1.5 kg groundfeed bags' }
+  ],
+
+  // "What anglers say": reviews copied by hand from the shop's Google listing
+  // (Google Maps > Reviews). googleRating is the total Google shows there; update
+  // it when new reviews come in. A review without "text" is a star rating only;
+  // those are listed by name underneath. The section hides itself if this is empty.
+  googleRating: { stars: 5.0, count: 7 },
+  reviews: [
+    { name: 'Antoinette H.', stars: 5, text: 'Fantastic service! The gentleman was so kind and helpful towards my son. My son was there to purchase a new fishing rod. The store manager was helpful, knowledgeable, kind and treated my son very well!' },
+    { name: 'Hannes P.', stars: 5, text: 'Very helpful and friendly people! Great service' },
+    { name: 'Kyle E.', stars: 5, text: 'Very friendly, helpful and awesome people. Service is 5 stars', note: 'Translated from Afrikaans by Google' },
+    { name: 'Wihan A.', stars: 5 },
+    { name: 'Henco S.', stars: 5 },
+    { name: 'Shaun B.', stars: 5 }
+  ]
 };
 
 /* ---------------------------------------------------------
@@ -241,16 +270,252 @@ function renderList(items, listId, iconClass) {
   });
 }
 
-function renderPhotos() {
-  if (!CONFIG.photos.length) return;
-  CONFIG.photos.forEach((photo) => {
+/* ---------------------------------------------------------
+   "Inside the shop" gallery: one big photo, with the next one
+   peeking out on the right (and the previous one on the left,
+   once you've moved on). It goes round in a loop: after the
+   last photo comes the first again. Arrows, a tap on a peeking
+   photo, a swipe or the arrow keys move between them.
+   --------------------------------------------------------- */
+function setupGallery() {
+  const photos = CONFIG.photos;
+  const count = photos.length;
+  if (!count) {
+    $('nav-gallery').hidden = true;
+    return;
+  }
+
+  const box = $('gallery-box');
+  const stage = $('gallery-stage');
+  const prev = $('gallery-prev');
+  const next = $('gallery-next');
+  let current = 0;
+  let moved = false; // until the visitor moves on, nothing peeks out on the left
+  let nearScreen = false;
+
+  // Where photo i sits, counting round the loop from the one showing:
+  // 0 is the big one, 1 peeks out on the right, -1 on the left.
+  function placeOf(i) {
+    const ahead = (i - current + count) % count;
+    const offset = ahead > count / 2 ? ahead - count : ahead;
+    const hidden = Math.abs(offset) > 1 || (offset < 0 && (!moved || count < 3));
+    return { offset, hidden };
+  }
+
+  const slides = photos.map((photo, i) => {
+    const slide = make('figure', 'gallery-slide');
+    slide.setAttribute('role', 'group');
+    slide.setAttribute('aria-roledescription', 'slide');
+    slide.setAttribute('aria-label', (i + 1) + ' of ' + photos.length);
     const img = make('img');
-    img.src = photo.src;
-    img.alt = photo.alt;
-    img.loading = 'lazy';
-    $('photos').append(img);
+    img.alt = photo.alt || 'Inside ' + CONFIG.name + ', photo ' + (i + 1) + ' of ' + photos.length;
+    img.decoding = 'async';
+    img.draggable = false;
+    img.addEventListener('load', layout); // now we know its real shape
+    slide.append(img);
+    stage.insertBefore(slide, prev);
+    return { slide, img, src: photo.src };
   });
-  $('photos-block').hidden = false;
+
+  // Each photo keeps its own shape. The big one is as large as fits; the
+  // peeking ones are smaller, tilted, and placed so the same amount shows.
+  function layout() {
+    const width = stage.clientWidth;
+    if (!width) return;
+    const phone = width < 560;
+    const maxW = width * (phone ? 0.8 : 0.62);
+    const maxH = Math.min(width * (phone ? 0.85 : 0.47), window.innerHeight * 0.7);
+    const peek = width * (phone ? 0.11 : 0.17);
+    stage.style.height = Math.round(maxH) + 'px';
+
+    const sizes = slides.map(({ img }) => {
+      const ratio = img.naturalWidth ? img.naturalWidth / img.naturalHeight : 4 / 3;
+      const w = Math.min(maxW, maxH * ratio);
+      return { w, h: w / ratio };
+    });
+    // The peeking photos and arrows line up with the big photo's box, not the
+    // photo itself, so they stay put whatever shape the photo is
+    const edge = maxW / 2;
+
+    slides.forEach(({ slide }, i) => {
+      const { offset, hidden } = placeOf(i);
+      const side = Math.sign(offset);
+      const scale = offset === 0 ? 1 : hidden ? 0.7 : 0.8;
+      const x = offset === 0 ? 0 : side * (edge + peek * (hidden ? 1.6 : 1) - sizes[i].w * scale / 2);
+      slide.style.width = sizes[i].w.toFixed(1) + 'px';
+      slide.style.height = sizes[i].h.toFixed(1) + 'px';
+      slide.style.setProperty('--x', x.toFixed(1) + 'px');
+      slide.style.setProperty('--turn', side * (hidden ? 9 : 5) + 'deg');
+      slide.style.setProperty('--scale', scale);
+    });
+
+    // The arrows sit over the peeking photos, kept clear of the fishing line
+    // that hangs down the right edge of the screen
+    const arrow = Math.min(edge + Math.min(peek / 2, 64), window.innerWidth / 2 - 70);
+    prev.style.setProperty('--x', (-arrow).toFixed(1) + 'px');
+    next.style.setProperty('--x', arrow.toFixed(1) + 'px');
+  }
+
+  function show(index, announce) {
+    current = ((index % count) + count) % count; // past the last photo comes the first, and back
+    slides.forEach(({ slide, img, src }, i) => {
+      const { offset, hidden } = placeOf(i);
+      slide.className = 'gallery-slide ' + (offset === 0 ? 'is-current'
+        : hidden ? 'is-far'
+        : offset > 0 ? 'is-near is-next' : 'is-near is-prev');
+      if (offset === 0) slide.removeAttribute('aria-hidden');
+      else slide.setAttribute('aria-hidden', 'true');
+      // Only load photos close to the one showing
+      const soon = Math.abs(offset) <= 2 && (offset >= 0 || moved);
+      if (nearScreen && soon && !img.getAttribute('src')) img.src = src;
+    });
+
+    prev.hidden = !moved || count < 3;
+    next.hidden = count < 2;
+
+    $('gallery-count').textContent = (current + 1) + ' / ' + count;
+    $('gallery-caption').textContent = photos[current].caption || '';
+    if (announce) {
+      $('gallery-live').textContent = 'Photo ' + (current + 1) + ' of ' + count
+        + (photos[current].caption ? ': ' + photos[current].caption : '');
+    }
+    layout();
+  }
+
+  // One step forward (1) or back (-1)
+  function go(step) {
+    if (step < 0 && prev.hidden) return; // nothing to go back to yet
+    moved = true;
+    show(current + step, true);
+  }
+
+  prev.addEventListener('click', () => go(-1));
+  next.addEventListener('click', () => go(1));
+  box.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowLeft') { event.preventDefault(); go(-1); }
+    if (event.key === 'ArrowRight') { event.preventDefault(); go(1); }
+  });
+
+  // Swipe sideways to move; tap a peeking photo to bring it forward
+  let downX = null;
+  let downY = 0;
+  stage.addEventListener('pointerdown', (event) => {
+    if (event.target.closest('.gallery-arrow')) return; // the arrows handle their own clicks
+    downX = event.clientX;
+    downY = event.clientY;
+  });
+  stage.addEventListener('pointercancel', () => { downX = null; });
+  stage.addEventListener('pointerup', (event) => {
+    if (downX === null) return;
+    const dx = event.clientX - downX;
+    const dy = event.clientY - downY;
+    downX = null;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+      go(dx < 0 ? 1 : -1);
+      return;
+    }
+    const tapped = slides.findIndex(({ slide }) => slide.contains(event.target));
+    if (tapped < 0) return;
+    const { offset, hidden } = placeOf(tapped);
+    if (!hidden && offset !== 0) go(offset);
+  });
+
+  window.addEventListener('resize', layout);
+  $('gallery').hidden = false;
+
+  // Start loading the first photos when the gallery gets close to the screen
+  const startLoading = () => { nearScreen = true; show(current); };
+  if ('IntersectionObserver' in window) {
+    const watcher = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) { watcher.disconnect(); startLoading(); }
+    }, { rootMargin: '800px 0px' });
+    watcher.observe(box);
+  } else {
+    nearScreen = true;
+  }
+
+  stage.classList.add('is-still'); // place the photos without animating them
+  show(0);
+  requestAnimationFrame(() => requestAnimationFrame(() => stage.classList.remove('is-still')));
+}
+
+/* ---------------------------------------------------------
+   Reviews ("What anglers say")
+   --------------------------------------------------------- */
+const STAR = '<svg viewBox="0 0 24 24"><path d="M12 2.6l2.8 5.9 6.5.8-4.8 4.5 1.2 6.4L12 17.1l-5.7 3.1 1.2-6.4-4.8-4.5 6.5-.8z"/></svg>';
+
+// Colours for the initial circles (we don't copy reviewers' Google photos)
+const AVATAR_COLOURS = ['#2f8a07', '#1f6f5c', '#56731f', '#2c5e7a', '#7a5a1f', '#5e3f7a'];
+
+function starsFor(count, className) {
+  const box = make('span', 'stars' + (className ? ' ' + className : ''));
+  box.setAttribute('role', 'img');
+  box.setAttribute('aria-label', count + ' out of 5 stars');
+  for (let i = 0; i < 5; i++) {
+    const star = make('span', i < count ? 'star' : 'star is-empty');
+    star.style.setProperty('--i', i);
+    star.innerHTML = STAR; // our own drawing
+    box.append(star);
+  }
+  return box;
+}
+
+function avatarFor(name) {
+  let hash = 0;
+  for (const ch of name) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+  const avatar = make('span', 'avatar', name.trim().charAt(0).toUpperCase());
+  avatar.style.background = AVATAR_COLOURS[hash % AVATAR_COLOURS.length];
+  avatar.setAttribute('aria-hidden', 'true');
+  return avatar;
+}
+
+function renderReviews() {
+  if (!CONFIG.reviews.length) {
+    $('nav-reviews').hidden = true;
+    return;
+  }
+
+  // Overall rating, linking to the reviews on Google Maps
+  const rating = CONFIG.googleRating;
+  const summary = $('rating-summary');
+  summary.href = mapLink();
+  summary.target = '_blank';
+  summary.rel = 'noopener';
+  summary.setAttribute('aria-label', 'Rated ' + rating.stars.toFixed(1) + ' out of 5 from ' + rating.count + ' Google reviews. See them on Google Maps');
+  summary.append(
+    make('span', 'rating-number', rating.stars.toFixed(1)),
+    starsFor(Math.round(rating.stars)),
+    make('span', 'rating-link', rating.count + ' reviews on Google')
+  );
+
+  // Reviews with words
+  CONFIG.reviews.filter((review) => review.text).forEach((review, index) => {
+    const li = make('li', 'review');
+    li.style.setProperty('--seen-delay', (index % 3) * 0.15 + 's');
+    const figure = make('figure');
+    const quote = make('blockquote');
+    quote.append(make('p', '', review.text));
+    figure.append(starsFor(review.stars), quote);
+    if (review.note) figure.append(make('p', 'review-note', review.note));
+
+    const by = make('figcaption');
+    const who = make('span');
+    who.append(make('span', 'review-name', review.name), make('span', 'review-source', 'Google review'));
+    by.append(avatarFor(review.name), who);
+    figure.append(by);
+    li.append(figure);
+    $('review-list').append(li);
+  });
+
+  // Star ratings without words
+  const ratingsOnly = CONFIG.reviews.filter((review) => !review.text);
+  ratingsOnly.forEach((review) => {
+    const li = make('li');
+    li.append(avatarFor(review.name), make('span', 'review-name', review.name), starsFor(review.stars, 'stars-small'));
+    $('rated-list').append(li);
+  });
+  $('also-rated').hidden = !ratingsOnly.length;
+  $('reviews').hidden = false;
 }
 
 function renderContact() {
@@ -516,9 +781,11 @@ function setupHeroPlay() {
   });
 }
 
-// Icons play their animation once as they scroll into view (helps on phones, which have no hover)
+// Icons play their animation once as they scroll into view (helps on phones, which have no hover).
+// The review stars pop in one by one the same way.
 function setupSeen() {
   if (REDUCED_MOTION || !('IntersectionObserver' in window)) return;
+  $('reviews').classList.add('reviews-anim');
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
       if (entry.isIntersecting) {
@@ -527,7 +794,7 @@ function setupSeen() {
       }
     });
   }, { threshold: 0.6 });
-  document.querySelectorAll('.stock-list li, .promise-list li').forEach((item) => observer.observe(item));
+  document.querySelectorAll('.stock-list li, .promise-list li, .review, .rating-summary').forEach((item) => observer.observe(item));
 }
 
 /* ---------------------------------------------------------
@@ -573,7 +840,8 @@ function init() {
 
   renderList(CONFIG.promises, 'promise-list', 'pico');
   renderList(CONFIG.stock, 'stock-list', 'ico');
-  renderPhotos();
+  setupGallery();
+  renderReviews();
   renderContact();
   renderHours();
   renderStatus();
