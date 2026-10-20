@@ -9,8 +9,11 @@ const CONFIG = {
   intro: 'Your tackle shop in Cachet Park, Potchefstroom. Lures, reels, rods and bait, plus honest advice from people who fish. Can’t make it in? We ship worldwide.',
 
   address: ['Premises 14, Cachet Park', 'Cnr Meyer & Steve Biko Street', 'Potchefstroom'],
-  // Google Maps link for the shop (Get directions and Open in Google Maps buttons)
+  // Google Maps link for the shop (used on computers, and for the Google reviews link)
   mapUrl: 'https://maps.app.goo.gl/c7ECoqXXbVafwsJg7',
+  // The shop's map pin, so phones can open their own maps app
+  // (Apple Maps on iPhone/iPad, the default maps app on Android)
+  mapPin: { lat: -26.6925452, lng: 27.0937725 },
 
   email: 'vettieshengelhoekie@gmail.com',
 
@@ -123,7 +126,20 @@ function whatsappLink(phone, message) {
   return message ? base + '?text=' + encodeURIComponent(message) : base;
 }
 
+// Opens the visitor's own maps app: Apple Maps on iPhone/iPad, the default
+// maps app on Android (geo: lets them pick Google Maps, Waze, etc.), and
+// Google Maps in a new tab on computers.
 function mapLink() {
+  const { lat, lng } = CONFIG.mapPin;
+  const ua = navigator.userAgent;
+  const isApple = /iPhone|iPad|iPod/.test(ua) ||
+    (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1); // iPadOS
+  if (isApple) {
+    return 'https://maps.apple.com/?ll=' + lat + ',' + lng + '&q=' + encodeURIComponent(CONFIG.name);
+  }
+  if (/Android/.test(ua)) {
+    return 'geo:' + lat + ',' + lng + '?q=' + lat + ',' + lng + '(' + encodeURIComponent(CONFIG.name) + ')';
+  }
   return CONFIG.mapUrl;
 }
 
@@ -478,7 +494,7 @@ function renderReviews() {
   // Overall rating, linking to the reviews on Google Maps
   const rating = CONFIG.googleRating;
   const summary = $('rating-summary');
-  summary.href = mapLink();
+  summary.href = CONFIG.mapUrl;
   summary.target = '_blank';
   summary.rel = 'noopener';
   summary.setAttribute('aria-label', 'Rated ' + rating.stars.toFixed(1) + ' out of 5 from ' + rating.count + ' Google reviews. See them on Google Maps');
@@ -560,7 +576,12 @@ function renderContact() {
   });
 
   // Map buttons
-  ['hero-map', 'visit-map'].forEach((id) => { $(id).href = mapLink(); });
+  ['hero-map', 'visit-map'].forEach((id) => {
+    const link = $(id);
+    link.href = mapLink();
+    // geo: links hand off to an app, so don't open an empty tab for them
+    if (!link.href.startsWith('http')) link.removeAttribute('target');
+  });
 }
 
 /* ---------------------------------------------------------
