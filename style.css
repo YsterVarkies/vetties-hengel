@@ -121,13 +121,18 @@ a { color: inherit; }
 
 /* ---------- Green band with the diagonal edge ----------
    The band is pulled up over the hero and its top edge is cut
-   on an angle, like the green corner on the shop's flyer. */
+   on an angle, like the green corner on the shop's flyer. The angle is
+   painted into the background (clear above the line, green below) rather
+   than cut with clip-path: Chrome briefly dropped the clip, showing a
+   straight edge, the first time a promise icon animated. */
 .promises {
   position: relative;
-  background: var(--green); color: #0a0a0a;
+  color: #0a0a0a;
+  background:
+    linear-gradient(to bottom right, transparent calc(50% - .5px), var(--green) calc(50% + .5px)) top / 100% var(--cut) no-repeat,
+    linear-gradient(var(--green), var(--green)) 0 calc(var(--cut) - 1px) / 100% calc(100% - var(--cut) + 1px) no-repeat;
   margin-top: calc(var(--cut) * -1);
   padding: calc(var(--cut) + 34px) 0 50px;
-  clip-path: polygon(0 var(--cut), 100% 0, 100% 100%, 0 100%);
 }
 .promise-list {
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px;
