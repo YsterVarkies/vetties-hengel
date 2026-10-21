@@ -144,7 +144,7 @@
           transformed.z += sin(swim) * uFlex * along * along * 0.3;
           transformed.x += cos(swim) * uFlex * along * along * 0.05;`);
     };
-    const fishGeometry = inflatedGeometry(THREE, alpha, GW, GH, FISH_W, FISH_H, 0.24);
+    const fishGeometry = inflatedGeometry(THREE, alpha, GW, GH, FISH_W, FISH_H, 0.3);
     const fish = new THREE.Mesh(fishGeometry, fishMaterial);
     scene.add(fish);
 
@@ -508,22 +508,29 @@
     loop.add({ active: () => visible, frame });
   }
 
-  // Builds a puffed-out mesh from a picture's outline: thin parts (fins) stay
-  // flat and the body gets rounded, like an inflated sticker. Front and back.
+  // Builds a rounded mesh from a picture's outline, front and back. Each part
+  // bulges like a tube as wide as it is, so the body is round from top to
+  // bottom (curving in smoothly at the edges) and thin parts like fins stay flat.
   function inflatedGeometry(THREE, alpha, gw, gh, width, height, depth) {
     const N = gw * gh;
 
     // Distance from each painted pixel to the outline
     const dist = chamfer(alpha.map((a) => (a > 0.5 ? 1 : 0)), gw, gh, true);
 
-    // Turn distance into thickness, then smooth it
-    const reach = gw * 0.13;
+    // How wide the part around each pixel is (big in the body, small in fins)
+    const radius = blurChannel(localRadius(dist, gw, gh), gw, gh, 2);
+
+    // Thickness follows a circle of that radius: steep at the edge, rounded on top
     let thick = new Float32Array(N);
+    let most = 0;
     for (let i = 0; i < N; i++) {
-      const t = Math.min(dist[i] / reach, 1);
-      thick[i] = t * (2 - t);
+      const d = dist[i];
+      const r = Math.max(radius[i], d);
+      thick[i] = Math.sqrt(d * (2 * r - d));
+      most = Math.max(most, thick[i]);
     }
-    for (let pass = 0; pass < 2; pass++) {
+    for (let i = 0; i < N; i++) thick[i] /= most || 1;
+    for (let pass = 0; pass < 3; pass++) {
       const out = new Float32Array(N);
       for (let y = 0; y < gh; y++) {
         for (let x = 0; x < gw; x++) {
@@ -637,6 +644,29 @@
     const image = ctx.getImageData(0, 0, w, h);
     const px = image.data;
 
+    // Drop stray dots: little islands of paint not joined to the fish. Left in,
+    // they'd get joined up below and fill the open mouth.
+    const minIsland = Math.round(N * 0.00025);
+    const seen = new Uint8Array(N);
+    const island = [];
+    const todo = [];
+    for (let s = 0; s < N; s++) {
+      if (seen[s] || px[s * 4 + 3] < 128) continue;
+      island.length = 0;
+      todo.push(s);
+      seen[s] = 1;
+      while (todo.length) {
+        const i = todo.pop();
+        island.push(i);
+        const x = i % w;
+        if (x > 0 && !seen[i - 1] && px[(i - 1) * 4 + 3] >= 128) { seen[i - 1] = 1; todo.push(i - 1); }
+        if (x < w - 1 && !seen[i + 1] && px[(i + 1) * 4 + 3] >= 128) { seen[i + 1] = 1; todo.push(i + 1); }
+        if (i >= w && !seen[i - w] && px[(i - w) * 4 + 3] >= 128) { seen[i - w] = 1; todo.push(i - w); }
+        if (i < N - w && !seen[i + w] && px[(i + w) * 4 + 3] >= 128) { seen[i + w] = 1; todo.push(i + w); }
+      }
+      if (island.length < minIsland) island.forEach((i) => { px[i * 4 + 3] = 0; });
+    }
+
     // Close the gaps: grow the painted area by "gap", then shrink it back
     const clear = new Uint8Array(N);
     for (let i = 0; i < N; i++) clear[i] = px[i * 4 + 3] < 128 ? 1 : 0;
@@ -707,6 +737,39 @@
       }
     }
     return d;
+  }
+
+  // For each pixel, the radius of the biggest circle that fits inside the shape
+  // and covers that pixel. The circles are centred on the shape's middle line
+  // (pixels no nearer the edge than their neighbours).
+  function localRadius(dist, w, h) {
+    const radius = Float32Array.from(dist);
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const r = dist[y * w + x];
+        if (r < 1) continue;
+        let middle = true;
+        for (let j = -1; j <= 1 && middle; j++) {
+          for (let i = -1; i <= 1; i++) {
+            const xx = x + i;
+            const yy = y + j;
+            if (xx >= 0 && yy >= 0 && xx < w && yy < h && dist[yy * w + xx] > r + 0.5) { middle = false; break; }
+          }
+        }
+        if (!middle) continue;
+        const reach = Math.ceil(r);
+        for (let j = -reach; j <= reach; j++) {
+          for (let i = -reach; i <= reach; i++) {
+            const xx = x + i;
+            const yy = y + j;
+            if (i * i + j * j > r * r || xx < 0 || yy < 0 || xx >= w || yy >= h) continue;
+            const k = yy * w + xx;
+            if (radius[k] < r) radius[k] = r;
+          }
+        }
+      }
+    }
+    return radius;
   }
 
   // Box blur of one channel, across then down
