@@ -179,7 +179,8 @@
           uRipples: { value: ripples },
           uReflection: { value: reflection.texture },
           uResolution: { value: new THREE.Vector2(1, 1) },
-          uFogDensity: { value: 0.045 }
+          uFogDensity: { value: 0.045 },
+          uSunTight: { value: 1 }   // larger on phones, for a smaller glint
         },
         vertexShader: WORLD_VERT,
         fragmentShader: SCRIM_GLSL + SKY_GLSL + WATER_FRAG,
@@ -325,6 +326,7 @@
       sizeScale.value = distance / 7 * Math.min(1, camera.aspect * 1.4);   // smaller bubbles on narrow screens
       pointScale.value = buffer.y / (2 * tanHalf);
       shared.uGlowTight.value = Math.pow(distance / 7, 2);
+      water.material.uniforms.uSunTight.value = w < 768 ? 2.5 : 1;   // phones: a smaller sun glint on the water
       water.material.uniforms.uFogDensity.value = 0.32 / distance;
 
       // Keep the water calm behind the heading and buttons so they stay easy to read
@@ -851,6 +853,7 @@
     uniform sampler2D uReflection;
     uniform vec2 uResolution;
     uniform float uFogDensity;
+    uniform float uSunTight;
     varying vec3 vWorld;
 
     // One travelling wave: height in x, slope in y and z
@@ -895,7 +898,7 @@
       col = mix(col, refl.rgb * (0.3 + fres), refl.a);
 
       float sun = max(dot(R, uLightDir), 0.0);
-      col += vec3(0.75, 1.0, 0.7) * (pow(sun, 500.0) * 0.9 + pow(sun, 180.0) * 0.045 + pow(sun, 80.0) * 0.0045);
+      col += vec3(0.75, 1.0, 0.7) * (pow(sun, 500.0 * uSunTight) * 0.9 + pow(sun, 180.0 * uSunTight) * 0.045 + pow(sun, 80.0 * uSunTight) * 0.0045);
       col += vec3(0.12, 0.55, 0.01) * glow * 0.3;
 
       float fog = 1.0 - exp(-pow(eyeDist * uFogDensity, 2.0));
