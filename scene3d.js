@@ -895,7 +895,7 @@
       col = mix(col, refl.rgb * (0.3 + fres), refl.a);
 
       float sun = max(dot(R, uLightDir), 0.0);
-      col += vec3(0.75, 1.0, 0.7) * (pow(sun, 350.0) * 2.5 + pow(sun, 120.0) * 0.12 + pow(sun, 50.0) * 0.012);
+      col += vec3(0.75, 1.0, 0.7) * (pow(sun, 500.0) * 0.9 + pow(sun, 180.0) * 0.045 + pow(sun, 80.0) * 0.0045);
       col += vec3(0.12, 0.55, 0.01) * glow * 0.3;
 
       float fog = 1.0 - exp(-pow(eyeDist * uFogDensity, 2.0));
